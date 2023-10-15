@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:background="@drawable/gradient">
+
+    <!-- "BRINGO DEMO" text box at the top center -->
+    <TextView
+        android:id="@+id/textViewTitle"
+        android:layout_width="match_parent"
+        android:layout_height="75sp"
+        android:background="#7a4b9c"
+        android:gravity="center"
+        android:text="BRINGO DEMO"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="24sp"
+        android:layout_alignParentTop="true"
+    />
+
+
+    <TextView
+        android:id="@+id/TextAddress"
+        android:layout_width="381dp"
+        android:layout_height="390dp"
+        android:layout_above="@+id/buttonStartRoute"
+        android:layout_centerInParent="true"
+        android:layout_marginTop="1sp"
+        android:layout_marginBottom="14sp"
+
+        android:background="@drawable/rounded_edittext_background"
+        android:text="                      ADRESE CURENTE:"
+        android:textStyle="italic"
+        android:textAlignment="textStart"
+        android:textColor="#525050"
+        android:textColorHint="#525050"
+        android:textSize="20sp" />
+
+    <EditText
+        android:id="@+id/editTextAddress"
+        android:layout_width="match_parent"
+        android:layout_height="68sp"
+        android:layout_alignBottom="@+id/textViewTitle"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="-165sp"
+        android:background="@drawable/rounded_edittext_background2"
+        android:gravity="start|center_vertical"
+        android:hint="-INTRODU ADRESA"
+        android:inputType="text"
+        android:paddingStart="16sp"
+        android:paddingEnd="32sp"
+        android:shadowColor="#000000"
+        android:textColor="#f7f7f7"
+        android:textColorHint="#dfdce0" />
+
+    <Button
+        android:id="@+id/add_Adress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/editTextAddress"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="504sp"
+        android:background="@drawable/transparent_round_background"
+        android:drawableRight="@drawable/ic_plus"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/buttonStartRoute"
+        android:layout_width="match_parent"
+        android:layout_height="60sp"
+        android:layout_weight="1"
+
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:textSize="30sp"
+        android:text="START RUTĂ"
+        />
+</RelativeLayout>

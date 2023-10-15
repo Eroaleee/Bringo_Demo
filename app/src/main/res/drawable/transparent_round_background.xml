@@ -1,0 +1,11 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#00FFFFFF" /> <!-- Transparent background -->
+    <shadow android:shadowColor="#000000"
+    android:shadowDx="1"
+    android:shadowDy="1"
+    android:shadowRadius="1"
+    android:textColorHint="#dfdce0"
+    android:background="@drawable/black_outline_background"
+    android:gravity="start|center_vertical" />
+    <corners android:radius="30dp" />
+</shape>
