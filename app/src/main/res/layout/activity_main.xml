@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,83 +16,71 @@
         android:gravity="center"
         android:text="@string/bringo_demo"
         android:textColor="@color/white"
-        android:textStyle="bold"
         android:textSize="24sp"
-        android:layout_alignParentTop="true"
-    />
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent" />
 
-
-    <TextView
-        android:id="@+id/TextAddress"
-        android:layout_width="381dp"
-        android:layout_height="390dp"
-
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginVertical="@+id/editTextAddress"
-        android:layout_marginTop="-13dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="137dp"
-        android:background="@drawable/rounded_edittext_background"
-        android:text="@string/adrese_curente"
-        android:textAlignment="center"
-        android:textColor="#525050"
-        android:textColorHint="#525050"
-        android:textSize="20sp"
-        android:textStyle="italic" />
-
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvAddressList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginVertical="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/checkbox_end_at_begining"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etAddressName" />
 
     <EditText
-        android:id="@+id/editTextAddress"
-        android:layout_width="327dp"
-        android:layout_height="58dp"
-        android:layout_alignBottom="@+id/textViewTitle"
-        android:layout_centerInParent="true"
-        android:layout_marginBottom="-112dp"
+        android:id="@+id/etAddressName"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginVertical="20dp"
         android:autofillHints=""
         android:background="@drawable/rounded_edittext_background2"
-        android:gravity="start|center_vertical"
         android:hint="@string/introdu_adresa"
         android:inputType="text"
-        android:paddingStart="16sp"
-        android:paddingEnd="32sp"
         android:shadowColor="#000000"
         android:textColor="#f7f7f7"
-        android:textColorHint="#dfdce0">
+        android:textSize="28sp"
+        android:textColorHint="#dfdce0"
+        app:layout_constraintEnd_toStartOf="@+id/btnAddAddress"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTitle">
 
     </EditText>
 
-    <Button
-        android:id="@+id/add_Address"
+    <ImageButton
+        android:id="@+id/btnAddAddress"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/editTextAddress"
-        android:layout_alignBottom="@+id/editTextAddress"
-        android:layout_marginEnd="13dp"
-        android:layout_marginBottom="5dp"
-        android:background="@drawable/transparent_round_background"
-        android:drawableEnd="@drawable/ic_plus"
-        tools:ignore="SpeakableTextPresentCheck" />
+        android:layout_height="50dp"
+        android:layout_marginEnd="50dp"
+        android:src="@drawable/ic_add_location_black_28dp"
+        app:layout_constraintBottom_toTopOf="@+id/rvAddressList"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTitle"
+        android:contentDescription="@string/add_address" />
 
     <Button
         android:id="@+id/buttonStartRoute"
         android:layout_width="wrap_content"
         android:layout_height="60sp"
-
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
-        android:textSize="30sp"
         android:text="@string/start_rut"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         tools:ignore="RelativeOverlap" />
 
     <CheckBox
         android:id="@+id/checkbox_end_at_begining"
-        android:layout_width="284dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/buttonStartRoute"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="64dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginHorizontal="64dp"
         android:background="@drawable/rectangle_transparent"
-        android:text="@string/vrei_s_te_re_ntorci_de_unde_ai_plecat" />
-</RelativeLayout>
+        android:text="@string/vrei_s_te_re_ntorci_de_unde_ai_plecat"
+        app:layout_constraintBottom_toTopOf="@+id/buttonStartRoute"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
