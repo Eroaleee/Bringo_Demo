@@ -26,18 +26,39 @@
         android:id="@+id/TextAddress"
         android:layout_width="381dp"
         android:layout_height="390dp"
-        android:layout_above="@+id/buttonStartRoute"
-        android:layout_centerInParent="true"
-        android:layout_marginTop="1sp"
-        android:layout_marginBottom="14sp"
 
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginVertical="@+id/editTextAddress"
+        android:layout_marginTop="-13dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="137dp"
         android:background="@drawable/rounded_edittext_background"
-        android:text="                      ADRESE CURENTE:"
-        android:textStyle="italic"
-        android:textAlignment="textStart"
+        android:text="  ADRESE CURENTE:"
+        android:textAlignment="center"
         android:textColor="#525050"
         android:textColorHint="#525050"
-        android:textSize="20sp" />
+        android:textSize="20sp"
+        android:textStyle="italic" />
+
+    <TextView
+        android:id="@+id/textGoToFirstAdress"
+        android:layout_width="383dp"
+        android:layout_height="53dp"
+
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginVertical="@+id/editTextAddress"
+        android:layout_marginTop="-13dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="67dp"
+        android:background="@drawable/rounded_edittext_background2"
+        android:text="Doresti sa te reintorci de unde ai plecat?"
+        android:textAlignment="center"
+        android:textColor="#525050"
+        android:textColorHint="#525050"
+        android:textSize="15sp"
+        android:textStyle="italic" />
 
     <EditText
         android:id="@+id/editTextAddress"
@@ -45,7 +66,7 @@
         android:layout_height="68sp"
         android:layout_alignBottom="@+id/textViewTitle"
         android:layout_centerInParent="true"
-        android:layout_marginBottom="-165sp"
+        android:layout_marginBottom="-112dp"
         android:background="@drawable/rounded_edittext_background2"
         android:gravity="start|center_vertical"
         android:hint="-INTRODU ADRESA"
@@ -62,9 +83,39 @@
         android:layout_height="wrap_content"
         android:layout_alignRight="@id/editTextAddress"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="504sp"
+        android:layout_marginBottom="554dp"
         android:background="@drawable/transparent_round_background"
         android:drawableRight="@drawable/ic_plus"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/don_t_Go_To_First"
+        android:layout_width="wrap_content"
+        android:layout_height="31dp"
+        android:layout_alignEnd="@+id/TextAddress"
+        android:layout_alignRight="@id/textGoToFirstAdress"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="90dp"
+        android:layout_marginRight="92dp"
+        android:layout_marginBottom="70dp"
+        android:background="@drawable/rectangle_transparent"
+        android:text="NU"
+        android:textSize="10dp"
+        android:textColor="#525050"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/Go_To_First"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="233dp"
+        android:layout_marginBottom="70dp"
+        android:background="@drawable/rectangle_transparent"
+        android:text="DA"
+        android:textColor="#525050"
+        android:textSize="10dp"
         tools:ignore="SpeakableTextPresentCheck" />
 
     <Button
