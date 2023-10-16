@@ -8,8 +8,14 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class AddressAdapter (
-    private val addresses: MutableList<Address>
+    private val addresses: MutableList<Address>,
+    private val listener: AddressClickListener
 ) : RecyclerView.Adapter<AddressAdapter.AddressViewHolder>() {
+
+    // Interface for connecting the RecyclerView to the Screen
+    interface AddressClickListener {
+        fun onEditClicked(address: String)
+    }
 
     class AddressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
@@ -28,7 +34,7 @@ class AddressAdapter (
         notifyItemInserted(addresses.size - 1)
     }
 
-    fun deleteAddress(position: Int) {
+    private fun deleteAddress(position: Int) {
         addresses.removeAt(position)
         notifyItemRemoved(position)
     }
@@ -38,7 +44,14 @@ class AddressAdapter (
         holder.itemView.apply {
             findViewById<TextView>(R.id.tvAddress).text = currAddress.address
 
-            // findViewById<ImageButton>(R.id.btnEdit).
+            findViewById<ImageButton>(R.id.btnEdit).setOnClickListener {
+                listener.onEditClicked(currAddress.address)
+                deleteAddress(position)
+            }
+
+            findViewById<ImageButton>(R.id.btnErase).setOnClickListener {
+                deleteAddress(position)
+            }
         }
     }
 
