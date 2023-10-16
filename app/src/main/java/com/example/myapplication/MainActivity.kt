@@ -2,6 +2,8 @@ package com.example.myapplication
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,6 +32,12 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
                 addressAdapter.addAddress(address)
                 findViewById<EditText>(R.id.etAddressName).text.clear()
             }
+        }
+
+        findViewById<Button>(R.id.btnStartRoute).setOnClickListener{
+            val addresses: MutableList<String> = addressAdapter.getAddresses()
+
+            fastestRoute(this, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
         }
     }
 

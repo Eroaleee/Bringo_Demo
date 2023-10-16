@@ -58,4 +58,14 @@ class AddressAdapter (
     override fun getItemCount(): Int {
         return addresses.size
     }
+
+    fun getAddresses(): MutableList<String> {
+        val addressList = mutableListOf<String>()
+
+        addresses.forEach {
+            addressList.add(it.address)
+        }
+
+        return addressList
+    }
 }
