@@ -4,10 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:background="@drawable/gradient">
+    android:background="@drawable/gradient"
+    tools:context=".MainActivity">
 
     <!-- "BRINGO DEMO" text box at the top center -->
+
     <TextView
         android:id="@+id/textViewTitle"
         android:layout_width="match_parent"
@@ -18,34 +19,41 @@
         android:textColor="@color/white"
         android:textSize="24sp"
         android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvAddressList"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="305dp"
+        android:layout_height="296dp"
+
         android:layout_marginHorizontal="50dp"
         android:layout_marginVertical="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/checkbox_end_at_begining"
+        android:layout_marginTop="92dp"
+        android:background="@drawable/rounded_edittext_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etAddressName" />
 
     <EditText
         android:id="@+id/etAddressName"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="50dp"
-        android:layout_marginVertical="20dp"
+        android:layout_width="259dp"
+        android:layout_height="67dp"
+
+        android:layout_marginTop="60dp"
         android:autofillHints=""
         android:background="@drawable/rounded_edittext_background2"
         android:hint="@string/introdu_adresa"
         android:inputType="text"
         android:shadowColor="#000000"
+        android:textAlignment="center"
         android:textColor="#f7f7f7"
-        android:textSize="28sp"
         android:textColorHint="#dfdce0"
-        app:layout_constraintEnd_toStartOf="@+id/btnAddAddress"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.322"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewTitle">
 
@@ -54,23 +62,31 @@
     <ImageButton
         android:id="@+id/btnAddAddress"
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_marginEnd="50dp"
-        android:src="@drawable/ic_add_location_black_28dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/transparent_round_background"
+        android:contentDescription="@string/add_address"
+        android:src="@drawable/ic_plus"
         app:layout_constraintBottom_toTopOf="@+id/rvAddressList"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.853"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewTitle"
-        android:contentDescription="@string/add_address" />
+        app:layout_constraintVertical_bias="0.711"
+        tools:ignore="ImageContrastCheck" />
 
     <Button
         android:id="@+id/buttonStartRoute"
         android:layout_width="wrap_content"
         android:layout_height="60sp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="60dp"
         android:text="@string/start_ruta"
         android:textSize="30sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/checkbox_end_at_begining"
+        app:layout_constraintVertical_bias="0.31"
         tools:ignore="RelativeOverlap" />
 
     <CheckBox
@@ -78,9 +94,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="64dp"
+        android:layout_marginTop="36dp"
         android:background="@drawable/rectangle_transparent"
         android:text="@string/vrei_sa_te_reintorci_de_unde_ai_plecat"
-        app:layout_constraintBottom_toTopOf="@+id/buttonStartRoute"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rvAddressList" />
 </androidx.constraintlayout.widget.ConstraintLayout>

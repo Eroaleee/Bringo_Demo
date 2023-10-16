@@ -2,7 +2,7 @@
     <string name="app_name">My Application</string>
     <string name="adrese_curente">ADRESE CURENTE:</string>
     <string name="start_ruta">START RUTĂ</string>
-    <string name="vrei_sa_te_reintorci_de_unde_ai_plecat">Vrei să te reîntorci de unde ai plecat?</string>
+    <string name="vrei_sa_te_reintorci_de_unde_ai_plecat">Vrei să te reîntorci de unde ai plecat? </string>
     <string name="introdu_adresa">-INTRODU ADRESA</string>
     <string name="bringo_demo">BRINGO DEMO</string>
     <string name="add_address">Add Address</string>
