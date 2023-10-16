@@ -66,7 +66,7 @@
         android:id="@+id/buttonStartRoute"
         android:layout_width="wrap_content"
         android:layout_height="60sp"
-        android:text="@string/start_rut"
+        android:text="@string/start_ruta"
         android:textSize="30sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -79,7 +79,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="64dp"
         android:background="@drawable/rectangle_transparent"
-        android:text="@string/vrei_s_te_re_ntorci_de_unde_ai_plecat"
+        android:text="@string/vrei_sa_te_reintorci_de_unde_ai_plecat"
         app:layout_constraintBottom_toTopOf="@+id/buttonStartRoute"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
