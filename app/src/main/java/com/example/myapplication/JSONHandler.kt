@@ -2,7 +2,6 @@ package com.example.myapplication
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,7 +38,7 @@ data class RequestData(
     @SerialName("routingPreference")
     val routingPreference: String,
     @SerialName("departureTime")
-    val timestamp: String
+    val departureTime: String
 )
 
 @Serializable
@@ -71,31 +70,26 @@ fun getCurrentTimeAsISO8601(timeAdded: Int): String {
     return time.format(formatter) + 'Z'
 }
 
-fun getJSONPayload(addresses: List<String>, timeAdded: Int): String {
+fun getJSONPayload(addresses: List<String>, timeAdded: Int): RequestData {
     val originList = mutableListOf<Origins>()
     val destinationList = mutableListOf<Destinations>()
 
-    addresses.forEach  {
+    addresses.forEach {
         originList.add(Origins(Waypoint(address = it)))
         destinationList.add(Destinations(Waypoint(address = it)))
     }
 
-    val requestData = RequestData(
+    return RequestData(
         origins = originList,
         destinations = destinationList,
         travelMode = "DRIVE",
         routingPreference = "TRAFFIC_AWARE",
-        timestamp = getCurrentTimeAsISO8601(timeAdded)
+        departureTime = getCurrentTimeAsISO8601(timeAdded)
     )
-
-    return Json.encodeToString(requestData)
 }
 
-fun readJSONResponse(jsonString: String, nrLocations: Int): MutableList<MutableList<Int>> {
+fun readJSONResponse(responseDataList: List<ResponseData>, nrLocations: Int): MutableList<MutableList<Int>> {
     val routeMatrix = MutableList(nrLocations) { MutableList(nrLocations) {0} }
-
-    val json = Json {ignoreUnknownKeys = true}
-    val responseDataList = json.decodeFromString<List<ResponseData>>(jsonString)
 
     for(responseData in responseDataList) {
         if(responseData.originIndex == responseData.destinationIndex)

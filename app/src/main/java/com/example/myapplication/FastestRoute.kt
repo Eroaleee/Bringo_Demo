@@ -2,10 +2,15 @@ package com.example.myapplication
 
 import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import androidx.core.content.ContextCompat.startActivity
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -15,7 +20,6 @@ import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
-import java.net.InetAddress
 
 interface GoogleRouteAPI {
     @Headers(
@@ -23,53 +27,34 @@ interface GoogleRouteAPI {
         "X-Goog-FieldMask: originIndex,destinationIndex,duration,distanceMeters,status,condition"
     )
     @POST("distanceMatrix/v2:computeRouteMatrix")
-    fun computeRouteMatrix(@Body payload: String, @Header("X-Goog-Api-Key") apiKey: String): Call<String>
+    fun computeRouteMatrix(@Body payload: RequestData, @Header("X-Goog-Api-Key") apiKey: String): Call<List<ResponseData>>
 }
 
-fun isNetworkConnected(context: Context): Boolean {
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val activeNetworkInfo = connectivityManager.activeNetworkInfo
-    return activeNetworkInfo?.isConnected == true
-}
-
-fun hasInternetAccess(): Boolean {
-    return try {
-        val ipAddr = InetAddress.getByName("google.com")
-        !ipAddr.equals("")
-    } catch (e: Exception) {
-        false
-    }
-}
-
-fun callMapsAPI(payload: String, onSuccess: (String) -> Unit, onFailure: (Throwable) -> Unit) {
+fun callMapsAPI(payload: RequestData, apiKey: String, onSuccess: (List<ResponseData>) -> Unit, onFailure: (Throwable) -> Unit) {
     val retrofit = Retrofit.Builder()
         .baseUrl("https://routes.googleapis.com/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    Log.d("Retrofit Builder", "Generated retrofit builder")
     val api = retrofit.create(GoogleRouteAPI::class.java)
-    Log.d("api call", "generated api var")
 
-    val apiKey = "AIzaSyDfvdvd2KFTdyK-zsTb93Etwl1oc2_Gd1o"  // TODO: gaseste o cale mai buna
     val call = api.computeRouteMatrix(payload, apiKey)
-    Log.d("api call", "generated call")
-    call.enqueue(object : Callback<String> {
-        override fun onResponse(call: Call<String>, response: Response<String>) {
-            Log.d("onResponse", "entered onResponse function")
+    call.enqueue(object : Callback<List<ResponseData>> {
+        override fun onResponse(
+            call: Call<List<ResponseData>>,
+            response: Response<List<ResponseData>>
+        ) {
             if(response.isSuccessful) {
-                Log.d("onResponse", "successful response")
                 response.body()?.let {
                     onSuccess(it)   // Call the onSuccess lambda with the response
                 }
             } else {
-                Log.d("onResponse", "failed response")
                 onFailure(Exception("API Response Not Successful"))
             }
         }
 
-        override fun onFailure(call: Call<String>, t: Throwable) {
-            Log.d("onFailure", "no response")
+        override fun onFailure(call: Call<List<ResponseData>>, t: Throwable) {
+            t.printStackTrace()
             onFailure(t)    // Call the onFailure lambda with the error
         }
     })
@@ -91,9 +76,10 @@ fun generateWebLink(minRoute: MutableList<Int>, addresses: List<String>): String
     return webLink
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigin: Boolean) {
-    println(isNetworkConnected(context))
-    println(hasInternetAccess())
+    val applicationInfo: ApplicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+    val apiKey: String = applicationInfo.metaData["MAPS_API_KEY"].toString()
 
     val routeMatrix: MutableList<MutableList<MutableList<Int>>> = mutableListOf()
 
@@ -101,30 +87,29 @@ fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigi
     for (timeAdded in 0..3) {
         println(getJSONPayload(addresses, timeAdded))
 
-        var responseJSON = ""
+        var responseJSON: List<ResponseData>
         callMapsAPI(
             getJSONPayload(addresses, timeAdded),
+            apiKey,
             onSuccess = {
                 responseJSON = it
+                routeMatrix.add(readJSONResponse(responseJSON, addresses.size))
             },
             onFailure = { error ->
                 error.printStackTrace()
             }
         )
-
-        Log.d("API call", "finished api call")
-        println(responseJSON)
-
-        routeMatrix.add(readJSONResponse(responseJSON, addresses.size))
     }
 
-    val currentRoute: MutableList<Int> = mutableListOf(0)
-    val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
+    GlobalScope.launch(Dispatchers.Main) {
+        delay(4000)
+        val currentRoute: MutableList<Int> = mutableListOf(0)
+        val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
 
-    getRoute(currentRoute, routeMatrix, addresses.size, 0, 0, routeData, returnToOrigin)
-    val webLink = generateWebLink(routeData.minRoute, addresses)
+        getRoute(currentRoute, routeMatrix, addresses.size, 0, 0, routeData, returnToOrigin)
+        val webLink = generateWebLink(routeData.minRoute, addresses)
 
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
-    startActivity(context, intent, null)
-    // TODO: baga in google maps app daca are
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
+        startActivity(context, intent, null)
+    }
 }
