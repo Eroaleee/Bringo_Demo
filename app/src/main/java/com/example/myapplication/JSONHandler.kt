@@ -15,7 +15,7 @@ data class LatLng(
 data class Waypoint(
     val location: LatLng? = null,
     @SerialName("address")
-    val address: String
+    val address: String? = null,
 )
 
 @Serializable

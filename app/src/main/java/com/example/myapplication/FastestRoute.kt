@@ -21,6 +21,8 @@ import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
+const val REQUEST_CODE_LOCATION_PERMISSION = 1001
+
 interface GoogleRouteAPI {
     @Headers(
         "Content-Type: application/json",
@@ -102,7 +104,7 @@ fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigi
     }
 
     GlobalScope.launch(Dispatchers.Main) {
-        delay(4000)
+        delay(3000)
         val currentRoute: MutableList<Int> = mutableListOf(0)
         val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
 

@@ -6,4 +6,7 @@
     <string name="introdu_adresa">-INTRODU ADRESA</string>
     <string name="bringo_demo">BRINGO DEMO</string>
     <string name="add_address">Add Address</string>
+    <string name="permisiune_locatie_respinsa">Fara a avea permisiunea de a accesa locatia curenta, va trebui sa introduceti manual drept prima adresa punctul de pornire.\n\nDaca doriti sa luam automat locatia curenta fara sa mai fie nevoie sa o mentionati, apasati butonul "Schimba permisiunea" pentru a fi redirectionat la setarile aplicatiei, apasati pe Permisiuni si la sectiunea Respins apasati pe locatie si updatati permisiunea.</string>
+    <string name="schimba_permisiunea">Schimba permisiunea</string>
+    <string name="ok_am_inteles">OK, am inteles</string>
 </resources>
