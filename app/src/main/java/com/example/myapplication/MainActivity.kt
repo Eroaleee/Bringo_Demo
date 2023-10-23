@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     private lateinit var addressAdapter: AddressAdapter
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private var currentLocation: Location? = null
+    private var comingFromSettings = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,13 +58,15 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
         findViewById<Button>(R.id.btnStartRoute).setOnClickListener{
             val addresses: MutableList<String> = addressAdapter.getAddresses()
 
-            fastestRoute(this, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
+            fastestRoute(this, currentLocation, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
         }
     }
 
     private fun fetchLastLocation() {
+        // If permissions aren't explicitly granted
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Ask for permission
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
@@ -71,10 +74,12 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             )
         }
         else {
+            // Otherwise just get the location
             getLastLocation()
         }
     }
 
+    // Suppress the missing permission because the function can only be called after permission is granted
     @SuppressLint("MissingPermission")
     private fun getLastLocation() {
         fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
@@ -106,23 +111,35 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     }
 
     private fun showPermissionDeniedDialog() {
+        // Prepare the popup
         val mDialog = Dialog(this)
         mDialog.setContentView(R.layout.popup_denied_location_permission)
         mDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         mDialog.show()
 
+        // Redirects the user to the app's settings after clicking the switch permissions button
         mDialog.findViewById<Button>(R.id.btnPopupAskPermissionAgain).setOnClickListener{
             mDialog.hide()
 
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", packageName, null)
             intent.data = uri
+            comingFromSettings = true
             startActivity(intent)
         }
 
         mDialog.findViewById<Button>(R.id.btnPopupOK).setOnClickListener{
             mDialog.hide()
+        }
+    }
+
+    // If the user is returning from switching permissions in the settings, refetch the location
+    override fun onResume() {
+        super.onResume()
+        if (comingFromSettings) {
+            fetchLastLocation()
+            comingFromSettings = false
         }
     }
 

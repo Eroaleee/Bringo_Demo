@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import androidx.core.content.ContextCompat.startActivity
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -64,22 +65,32 @@ fun callMapsAPI(payload: RequestData, apiKey: String, onSuccess: (List<ResponseD
     // TODO: s-ar putea pe android sa gasim alta susta pt API key
 }
 
-fun generateWebLink(minRoute: MutableList<Int>, addresses: List<String>): String {
+fun generateWebLink(minRoute: MutableList<Int>, currentLocation: Location?, addresses: List<String>): String {
     var webLink = "https://www.google.com/maps/dir/"
 
-    // TODO: Adauga coordonatele la inceput (ex: .../dir/44.4865,26.1738/Jolie+Ville+Galleria/...
-
-    minRoute.forEach {
-        // Web link cannot have spaces, so it uses '+' as a separator
-        val addressForLink = addresses[it].replace(' ', '+')
-        webLink += "$addressForLink/"
+    if(currentLocation != null) {
+        minRoute.forEach {
+            if(it == 0)
+                webLink += "${currentLocation.latitude},${currentLocation.longitude}/"
+            else {
+                // Web link cannot have spaces, so it uses '+' as a separator
+                val addressForLink = addresses[it - 1].replace(' ', '+')
+                webLink += "$addressForLink/"
+            }
+        }
+    } else {
+        minRoute.forEach {
+            // Web link cannot have spaces, so it uses '+' as a separator
+            val addressForLink = addresses[it].replace(' ', '+')
+            webLink += "$addressForLink/"
+        }
     }
 
     return webLink
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigin: Boolean) {
+fun fastestRoute(context: Context, currentLocation: Location?, addresses: MutableList<String>, returnToOrigin: Boolean) {
     val applicationInfo: ApplicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     val apiKey: String = applicationInfo.metaData["MAPS_API_KEY"].toString()
 
@@ -87,15 +98,16 @@ fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigi
 
     // Get route times for every half hour in the next 2-hour interval
     for (timeAdded in 0..3) {
-        println(getJSONPayload(addresses, timeAdded))
+        println(getJSONPayload(currentLocation, addresses, timeAdded))
 
         var responseJSON: List<ResponseData>
         callMapsAPI(
-            getJSONPayload(addresses, timeAdded),
+            getJSONPayload(currentLocation, addresses, timeAdded),
             apiKey,
             onSuccess = {
                 responseJSON = it
-                routeMatrix.add(readJSONResponse(responseJSON, addresses.size))
+                val currentLocationExists: Int = if (currentLocation != null) 1 else 0
+                routeMatrix.add(readJSONResponse(responseJSON, addresses.size + currentLocationExists))
             },
             onFailure = { error ->
                 error.printStackTrace()
@@ -109,7 +121,7 @@ fun fastestRoute(context: Context, addresses: MutableList<String>, returnToOrigi
         val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
 
         getRoute(currentRoute, routeMatrix, addresses.size, 0, 0, routeData, returnToOrigin)
-        val webLink = generateWebLink(routeData.minRoute, addresses)
+        val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
         startActivity(context, intent, null)

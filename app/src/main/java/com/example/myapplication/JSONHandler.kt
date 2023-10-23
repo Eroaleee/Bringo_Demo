@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.location.Location
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import java.time.LocalDateTime
@@ -12,8 +13,13 @@ data class LatLng(
 )
 
 @Serializable
+data class Location(
+    val latLng: LatLng
+)
+
+@Serializable
 data class Waypoint(
-    val location: LatLng? = null,
+    val location: com.example.myapplication.Location? = null,
     @SerialName("address")
     val address: String? = null,
 )
@@ -69,9 +75,14 @@ fun getCurrentTimeAsISO8601(timeAdded: Int): String {
     return time.format(formatter) + 'Z'
 }
 
-fun getJSONPayload(addresses: List<String>, timeAdded: Int): RequestData {
+fun getJSONPayload(currentLocation: Location?, addresses: List<String>, timeAdded: Int): RequestData {
     val originList = mutableListOf<Origins>()
     val destinationList = mutableListOf<Destinations>()
+
+    if(currentLocation != null) {
+        originList.add(Origins(Waypoint(location = Location(LatLng(currentLocation.latitude, currentLocation.longitude)))))
+        destinationList.add(Destinations(Waypoint(location = Location(LatLng(currentLocation.latitude, currentLocation.longitude)))))
+    }
 
     addresses.forEach {
         originList.add(Origins(Waypoint(address = it)))
