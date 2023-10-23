@@ -111,3 +111,9 @@ fun readJSONResponse(responseDataList: List<ResponseData>, nrLocations: Int): Mu
 
     return routeMatrix
 }
+
+data class AddressResult(
+    val place_id: String,
+    val display_name: String,
+    val type: String
+)

@@ -95,6 +95,7 @@ fun fastestRoute(context: Context, currentLocation: Location?, addresses: Mutabl
     val apiKey: String = applicationInfo.metaData["MAPS_API_KEY"].toString()
 
     val routeMatrix: MutableList<MutableList<MutableList<Int>>> = mutableListOf()
+    val currentLocationExists: Int = if (currentLocation != null) 1 else 0
 
     // Get route times for every half hour in the next 2-hour interval
     for (timeAdded in 0..3) {
@@ -106,7 +107,6 @@ fun fastestRoute(context: Context, currentLocation: Location?, addresses: Mutabl
             apiKey,
             onSuccess = {
                 responseJSON = it
-                val currentLocationExists: Int = if (currentLocation != null) 1 else 0
                 routeMatrix.add(readJSONResponse(responseJSON, addresses.size + currentLocationExists))
             },
             onFailure = { error ->
@@ -120,9 +120,11 @@ fun fastestRoute(context: Context, currentLocation: Location?, addresses: Mutabl
         val currentRoute: MutableList<Int> = mutableListOf(0)
         val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
 
-        getRoute(currentRoute, routeMatrix, addresses.size, 0, 0, routeData, returnToOrigin)
+        getRoute(currentRoute, routeMatrix, addresses.size + currentLocationExists, 0, 0, routeData, returnToOrigin)
+        println(routeData.minRoute)
         val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
 
+        println(webLink)
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
         startActivity(context, intent, null)
     }
