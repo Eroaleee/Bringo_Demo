@@ -21,7 +21,9 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.common.api.ApiException
@@ -32,10 +34,7 @@ import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     private lateinit var addressAdapter: AddressAdapter
@@ -46,13 +45,15 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     private var currentLocation: Location? = null
     private var comingFromSettings = false
     private val token = AutocompleteSessionToken.newInstance()
-    private val validPrefixes = mutableListOf("")
+    //private val validPrefixes = mutableListOf("")
+    private val routeService by lazy { RouteService(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val actvAddressInput = findViewById<AutoCompleteTextView>(R.id.actvAddressName)
+
         addressAdapter = AddressAdapter(mutableListOf(), this)
         autoCompleteAdapter = ArrayAdapter(this, R.layout.autocomplete_item)
         autoCompleteTextView = actvAddressInput
@@ -75,14 +76,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             if(addressName.isNotEmpty()) {
                 val address = Address(addressName)
                 addressAdapter.addAddress(address)
-                findViewById<EditText>(R.id.actvAddressName).text.clear()
-            }
-        }
-
-
-        autoCompleteTextView.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                findViewById<EditText>(R.id.actvAddressName).performClick()
+                actvAddressInput.text.clear()
             }
         }
 
@@ -95,10 +89,11 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
                         query = ""
 
                     // Update the Autocomplete Predictions based on the new query
-                    CoroutineScope(Dispatchers.Main).launch {
-                        applyDiacriticsAndUpdateList(query)
-                        println(validPrefixes)
-                    }
+                    //applyDiacriticsAndUpdateList(query)
+                    updateAutocompletePredictions(query)
+
+                    autoCompleteAdapter.notifyDataSetChanged()
+                    //println(validPrefixes)
                 }
 
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -110,8 +105,39 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
         findViewById<Button>(R.id.btnStartRoute).setOnClickListener{
             val addresses: MutableList<String> = addressAdapter.getAddresses()
 
-            fastestRoute(this, currentLocation, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
+            getFastestRoute(currentLocation, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
         }
+    }
+
+    // Handler function that allows async calls to Google Maps API and obtaining address
+    private fun getFastestRoute(currentLocation: Location?, addresses: MutableList<String>, returnToOrigin: Boolean) {
+        lifecycleScope.launch {
+            val result = routeService.getFastestRoute(currentLocation, addresses, returnToOrigin)
+
+            if (result.isSuccess) {
+                val webLink = result.getOrNull()
+                if (webLink != null) {
+                    // Redirect to Google Maps
+                    // TODO: add support for waze
+                    println(webLink)
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
+                    startActivity(intent)
+                } else {
+                    // Handle the error, the success value was null
+                    showErrorPopup("An unexpected error occurred")
+                }
+            } else {
+                val error = result.exceptionOrNull() // This returns the Throwable that was passed to Result.failure or null
+                // Handle the error, e.g., show a popup
+                showErrorPopup(error?.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    // TODO: add error popups for invalid addresses and internet connection
+    private fun showErrorPopup(message: String) {
+        // Show an error popup with the provided message
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun fetchLastLocation() {
@@ -213,7 +239,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
         placesClient = Places.createClient(this)
     }
 
-    private suspend fun applyDiacriticsAndUpdateList(input: String) {
+    /*private fun applyDiacriticsAndUpdateList(input: String) {
         autoCompleteAdapter.clear()
 
         // If a letter was added
@@ -221,19 +247,32 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             val prefixes = validPrefixes.filter { it.length == input.length - 1 }
 
             for (prefix in prefixes) {
+                val diacriticMap = mapOf(
+                    'a' to listOf('ă', 'â'),
+                    'ă' to listOf('a', 'â'),
+                    'â' to listOf('ă', 'a'),
+
+                    'i' to listOf('î'),
+                    'î' to listOf('i'),
+
+                    's' to listOf('ș'),
+                    'ș' to listOf('s'),
+
+                    't' to listOf('ț'),
+                    'ț' to listOf('t')
+                )
+
                 val newString = prefix + input.last()
-                val variations = applyDiacriticsToLastChar(newString)
+                updateAutocompletePredictions(newString)
 
-                println(variations)
-
-                for (variation in variations) {
-                    val nrSuggestion = autoCompleteAdapter.count
-                    withContext(Dispatchers.IO) {
+                val lastChar = newString.last()
+                diacriticMap[lastChar.lowercaseChar()]?.let { diacriticChars ->
+                    for (diacriticChar in diacriticChars) {
+                        val variation = StringBuilder(newString).also {
+                            it.setCharAt(input.length - 1, if (lastChar.isUpperCase()) diacriticChar.uppercaseChar() else diacriticChar)
+                        }.toString()
                         updateAutocompletePredictions(variation)
                     }
-
-                    if (nrSuggestion != autoCompleteAdapter.count || variation.length <= 3)
-                        validPrefixes.add(variation)
                 }
             }
         }
@@ -248,29 +287,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             validPrefixes.clear()
             validPrefixes.add("")
         }
-    }
-
-    private fun applyDiacriticsToLastChar(input: String): List<String> {
-        val diacriticMap = mapOf(
-            'a' to listOf('ă', 'â'),
-            'i' to listOf('î'),
-            's' to listOf('ș'),
-            't' to listOf('ț')
-        )
-
-        val variations = mutableListOf(input)
-        val lastChar = input.last()
-        diacriticMap[lastChar.lowercaseChar()]?.let { diacriticChars ->
-            for (diacriticChar in diacriticChars) {
-                val variation = StringBuilder(input).also {
-                    it.setCharAt(input.length - 1, if (lastChar.isUpperCase()) diacriticChar.uppercaseChar() else diacriticChar)
-                }.toString()
-                variations.add(variation)
-            }
-        }
-
-        return variations
-    }
+    }*/
 
     private fun updateAutocompletePredictions(query: String) {
         // Define the bounds for your autocomplete predictions
@@ -295,9 +312,23 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             .addOnSuccessListener { response ->
                 // Handle the success scenario here, you can update the UI with the predictions
                 val predictions = response.autocompletePredictions.map { it.getFullText(null).toString() }
+                /*
+                // Get the current items in the autoCompleteAdapter
+                val currentItems = (0 until autoCompleteAdapter.count).map { autoCompleteAdapter.getItem(it) }
+
+                // Filter out the predictions that are already in the adapter
+                val newPredictions = predictions.filter { it !in currentItems }
+                autoCompleteAdapter.addAll(newPredictions)*/
+                autoCompleteAdapter.clear()
                 autoCompleteAdapter.addAll(predictions)
-                autoCompleteAdapter.notifyDataSetChanged()
+
+                //var ok = false;
                 for (prediction in predictions) {
+                    /*if(!ok && prediction.startsWith(query)) {
+                        validPrefixes.add(query)
+                        ok = true
+                    }*/
+
                     Log.d("AUTOCOMPLETE", prediction)
                 }
             }.addOnFailureListener { exception ->

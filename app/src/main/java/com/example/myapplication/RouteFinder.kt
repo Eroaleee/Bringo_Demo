@@ -34,32 +34,18 @@ fun getRoute(currentRoute: MutableList<Int>,
              nrLocations: Int,
              currentLocation: Int,
              currentTime: Int,
-             routeData: RouteData,
-             returnToOrigin: Boolean)
+             routeData: RouteData)
 {
     // Get the current time iteration
     val iteration = min(3, currentTime / HALF_HOUR)
 
     // If all addresses have been visited, check if route is minimum and return
     if (routeData.addressMask == (1 shl nrLocations) - 1) {
-        var finalTime = currentTime
-
-        // If we must also return to origin add the route from the last location to the initial location
-        if (returnToOrigin) {
-            currentRoute.add(0)
-
-            finalTime += getTimeToNextLocation(iteration, routeMatrix, currentTime, currentLocation, 0)
-        }
-
         // Update the route and the time if the current route is faster
-        if(finalTime < routeData.minTime) {
-            routeData.minTime = finalTime
+        if(currentTime < routeData.minTime) {
+            routeData.minTime = currentTime
             routeData.minRoute = currentRoute.toMutableList()
         }
-
-        // Remove the initial location
-        if (returnToOrigin)
-            currentRoute.removeLast()
 
         return
     }
@@ -78,7 +64,7 @@ fun getRoute(currentRoute: MutableList<Int>,
             currentRoute.add(nextLocation)
             routeData.addressMask = routeData.addressMask or (1 shl nextLocation)
 
-            getRoute(currentRoute, routeMatrix, nrLocations, nextLocation, nextTime, routeData, returnToOrigin)
+            getRoute(currentRoute, routeMatrix, nrLocations, nextLocation, nextTime, routeData)
 
             // Remove the last location in the current route
             routeData.addressMask = routeData.addressMask xor (1 shl nextLocation)
