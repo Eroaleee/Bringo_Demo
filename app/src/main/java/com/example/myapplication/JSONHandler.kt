@@ -35,7 +35,7 @@ data class Destinations(
 )
 
 @Serializable
-data class RequestData(
+data class RequestDataRouteMatrix(
     val origins: List<Origins>,
     val destinations: List<Destinations>,
     @SerialName("travelMode")
@@ -52,7 +52,7 @@ data class StatusMessage(
 )
 
 @Serializable
-data class ResponseData(
+data class ResponseDataRouteMatrix(
     @SerialName("originIndex")
     val originIndex: Int,
     @SerialName("destinationIndex")
@@ -75,7 +75,7 @@ fun getCurrentTimeAsISO8601(timeAdded: Int): String {
     return time.format(formatter) + 'Z'
 }
 
-fun getJSONPayload(currentLocation: Location?, addresses: List<String>, timeAdded: Int): RequestData {
+fun getRouteMatrixJSONPayload(currentLocation: Location?, addresses: List<String>, timeAdded: Int): RequestDataRouteMatrix {
     val originList = mutableListOf<Origins>()
     val destinationList = mutableListOf<Destinations>()
 
@@ -89,7 +89,7 @@ fun getJSONPayload(currentLocation: Location?, addresses: List<String>, timeAdde
         destinationList.add(Destinations(Waypoint(address = it)))
     }
 
-    return RequestData(
+    return RequestDataRouteMatrix(
         origins = originList,
         destinations = destinationList,
         travelMode = "DRIVE",
@@ -98,7 +98,7 @@ fun getJSONPayload(currentLocation: Location?, addresses: List<String>, timeAdde
     )
 }
 
-fun readJSONResponse(responseDataList: List<ResponseData>, nrLocations: Int): MutableList<MutableList<Int>> {
+fun readRouteMatrixJSONResponse(responseDataList: List<ResponseDataRouteMatrix>, nrLocations: Int): MutableList<MutableList<Int>> {
     val routeMatrix = MutableList(nrLocations) { MutableList(nrLocations) {0} }
 
     for(responseData in responseDataList) {
@@ -112,8 +112,84 @@ fun readJSONResponse(responseDataList: List<ResponseData>, nrLocations: Int): Mu
     return routeMatrix
 }
 
-data class AddressResult(
-    val place_id: String,
-    val display_name: String,
-    val type: String
+@Serializable
+sealed class WaypointRouteOptimization {
+    @Serializable
+    data class Address(
+        @SerialName("address")
+        val address: String
+    ) : WaypointRouteOptimization()
+
+    @Serializable
+    data class Location(
+        @SerialName("location")
+        val location: com.example.myapplication.Location
+    ) : WaypointRouteOptimization()
+}
+
+data class RequestDataRouteOptimization(
+    @SerialName("origin")
+    val origin: WaypointRouteOptimization,
+    @SerialName("destination")
+    val destination: WaypointRouteOptimization,
+    @SerialName("intermediates")
+    val intermediates: List<WaypointRouteOptimization>,
+    @SerialName("travelMode")
+    val travelMode: String,
+    @SerialName("optimizeWaypointOrder")
+    val optimizeWaypointOrder: String = "true"
 )
+
+data class Routes(
+    @SerialName("optimizedIntermediateWaypointIndex")
+    val optimizedIntermediateWaypointIndex: MutableList<Int>
+)
+
+data class ResponseDataRouteOptimization(
+    @SerialName("routes")
+    val routes: MutableList<Routes>
+)
+
+fun getRouteOptimizationJSONPayload(currentLocation: Location?, addresses: List<String>): RequestDataRouteOptimization {
+    val originVal: WaypointRouteOptimization
+    val destinationVal: WaypointRouteOptimization
+
+    // If we have access to current location add precise coords
+    if(currentLocation != null) {
+        originVal = WaypointRouteOptimization.Location(Location(LatLng(currentLocation.latitude, currentLocation.longitude)))
+        destinationVal = WaypointRouteOptimization.Location(Location(LatLng(currentLocation.latitude, currentLocation.longitude)))
+    } else {
+        // Otherwise add first address in the given list
+        originVal = WaypointRouteOptimization.Address(addresses[0])
+        destinationVal = WaypointRouteOptimization.Address(addresses[0])
+    }
+
+    val intermediatesList = mutableListOf<WaypointRouteOptimization>()
+
+    addresses.forEach {
+        // If currentLocation isn't set, skip the first address (that is the origin/destination)
+        if (currentLocation != null || it != addresses[0])
+            intermediatesList.add(WaypointRouteOptimization.Address(it))
+    }
+
+    return RequestDataRouteOptimization(
+        origin = originVal,
+        destination = destinationVal,
+        intermediates = intermediatesList,
+        travelMode = "DRIVE",
+    )
+}
+
+fun readRouteOptimizationJSONResponse(responseDataRouteOptimization: ResponseDataRouteOptimization): MutableList<Int> {
+    println("response from JSON: $responseDataRouteOptimization")
+
+    // Add origin
+    val route = mutableListOf<Int>(0)
+    responseDataRouteOptimization.routes[0].optimizedIntermediateWaypointIndex.forEach {
+        // intermediate stops are indexed starting from 0, but 0 is the origin/destination, so we increment each index
+        route.add(it + 1)
+    }
+    // Add destination
+    route.add(0)
+    return route
+}

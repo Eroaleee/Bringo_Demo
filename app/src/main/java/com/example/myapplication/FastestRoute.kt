@@ -1,19 +1,13 @@
 package com.example.myapplication
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.location.Location
-import android.net.Uri
-import androidx.core.content.ContextCompat.startActivity
-import kotlinx.coroutines.DelicateCoroutinesApi
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
+import kotlinx.coroutines.withContext
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -24,108 +18,192 @@ import retrofit2.http.POST
 
 const val REQUEST_CODE_LOCATION_PERMISSION = 1001
 
-interface GoogleRouteAPI {
+interface GoogleRouteMatrixAPI {
     @Headers(
         "Content-Type: application/json",
         "X-Goog-FieldMask: originIndex,destinationIndex,duration,distanceMeters,status,condition"
     )
     @POST("distanceMatrix/v2:computeRouteMatrix")
-    fun computeRouteMatrix(@Body payload: RequestData, @Header("X-Goog-Api-Key") apiKey: String): Call<List<ResponseData>>
+    suspend fun computeRouteMatrix(@Body payload: RequestDataRouteMatrix, @Header("X-Goog-Api-Key") apiKey: String): Response<List<ResponseDataRouteMatrix>>
 }
 
-fun callMapsAPI(payload: RequestData, apiKey: String, onSuccess: (List<ResponseData>) -> Unit, onFailure: (Throwable) -> Unit) {
-    val retrofit = Retrofit.Builder()
+interface GoogleRouteOptimizationAPI {
+    @Headers(
+        "Content-Type: application/json",
+        "X-Goog-FieldMask: routes.optimizedIntermediateWaypointIndex"
+    )
+    @POST("directions/v2:computeRoutes")
+    suspend fun computeOptimizedRoute(@Body payload: RequestDataRouteOptimization, @Header("X-Goog-Api-Key") apiKey: String): Response<ResponseDataRouteOptimization>
+}
+
+object RetrofitService {
+    private val retrofit = Retrofit.Builder()
         .baseUrl("https://routes.googleapis.com/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    val api = retrofit.create(GoogleRouteAPI::class.java)
+    val googleRouteMatrixAPI: GoogleRouteMatrixAPI by lazy {
+        retrofit.create(GoogleRouteMatrixAPI::class.java)
+    }
 
-    val call = api.computeRouteMatrix(payload, apiKey)
-    call.enqueue(object : Callback<List<ResponseData>> {
-        override fun onResponse(
-            call: Call<List<ResponseData>>,
-            response: Response<List<ResponseData>>
-        ) {
-            if(response.isSuccessful) {
-                response.body()?.let {
-                    onSuccess(it)   // Call the onSuccess lambda with the response
+    val googleRouteOptimizationAPI: GoogleRouteOptimizationAPI by lazy {
+        retrofit.create(GoogleRouteOptimizationAPI::class.java)
+    }
+}
+
+class RouteService(private val context: Context) {
+
+    private val apiKey: String by lazy {
+        val applicationInfo: ApplicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        applicationInfo.metaData["MAPS_API_KEY"].toString()
+    }
+
+    suspend fun getFastestRoute(currentLocation: Location?, addresses: MutableList<String>, returnToOrigin: Boolean): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
+
+                if (!returnToOrigin)
+                    getRouteNoReturn(currentLocation, addresses, routeData, apiKey)
+                else
+                    getRouteWithReturn(currentLocation, addresses, routeData, apiKey)
+
+
+                println("Minimum route is: ${routeData.minRoute}")
+                val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
+
+                // The below commented code will be moved to main activity
+                /*println(webLink)
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
+                startActivity(context, intent, null)*/
+                Result.success(webLink)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    private fun generateWebLink(minRoute: MutableList<Int>, currentLocation: Location?, addresses: List<String>): String {
+        var webLink = "https://www.google.com/maps/dir/"
+
+        if(currentLocation != null) {
+            minRoute.forEach {
+                if(it == 0)
+                    webLink += "${currentLocation.latitude},${currentLocation.longitude}/"
+                else {
+                    // Web link cannot have spaces, so it uses '+' as a separator
+                    val addressForLink = addresses[it - 1].replace(' ', '+')
+                    webLink += "$addressForLink/"
                 }
-            } else {
-                onFailure(Exception("API Response Not Successful"))
+            }
+        } else {
+            minRoute.forEach {
+                // Web link cannot have spaces, so it uses '+' as a separator
+                val addressForLink = addresses[it].replace(' ', '+')
+                webLink += "$addressForLink/"
             }
         }
 
-        override fun onFailure(call: Call<List<ResponseData>>, t: Throwable) {
-            t.printStackTrace()
-            onFailure(t)    // Call the onFailure lambda with the error
+        return webLink
+    }
+}
+
+suspend fun callMapsRouteMatrixAPI(payload: RequestDataRouteMatrix,
+                                   apiKey: String
+): Result<List<ResponseDataRouteMatrix>> = withContext(Dispatchers.IO) {
+    try {
+        val response = RetrofitService.googleRouteMatrixAPI.computeRouteMatrix(payload, apiKey)
+
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Result.success(it)
+            } ?: Result.failure(Exception("No Response Body"))
+        } else {
+            Result.failure(Exception("API Response Not Successful"))
         }
-    })
+
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
     // TODO: s-ar putea pe android sa gasim alta susta pt API key
 }
 
-fun generateWebLink(minRoute: MutableList<Int>, currentLocation: Location?, addresses: List<String>): String {
-    var webLink = "https://www.google.com/maps/dir/"
+suspend fun callMapsRouteOptimizerAPI(payload: RequestDataRouteOptimization,
+                                      apiKey: String
+): Result<ResponseDataRouteOptimization> = withContext(Dispatchers.IO) {
+    try {
+        val response = RetrofitService.googleRouteOptimizationAPI.computeOptimizedRoute(payload, apiKey)
 
-    if(currentLocation != null) {
-        minRoute.forEach {
-            if(it == 0)
-                webLink += "${currentLocation.latitude},${currentLocation.longitude}/"
-            else {
-                // Web link cannot have spaces, so it uses '+' as a separator
-                val addressForLink = addresses[it - 1].replace(' ', '+')
-                webLink += "$addressForLink/"
-            }
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Result.success(it)
+            } ?: Result.failure(Exception("No Response Body"))
+        } else {
+            // Log the error response
+            val statusCode = response.code()
+            val errorBody = response.errorBody()?.string()
+            Log.e("RouteOptimizerAPI", "API Response Not Successful: StatusCode: $statusCode, ErrorBody: $errorBody")
+            Result.failure(Exception("API Response Not Successful: StatusCode: $statusCode, ErrorBody: $errorBody"))
         }
-    } else {
-        minRoute.forEach {
-            // Web link cannot have spaces, so it uses '+' as a separator
-            val addressForLink = addresses[it].replace(' ', '+')
-            webLink += "$addressForLink/"
-        }
+
+    } catch (e: Exception) {
+        Log.e("RouteOptimizerAPI", "API Request Failed", e)
+        Result.failure(e)
     }
-
-    return webLink
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-fun fastestRoute(context: Context, currentLocation: Location?, addresses: MutableList<String>, returnToOrigin: Boolean) {
-    val applicationInfo: ApplicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-    val apiKey: String = applicationInfo.metaData["MAPS_API_KEY"].toString()
-
+suspend fun getRouteNoReturn(currentLocation: Location?,
+                             addresses: MutableList<String>,
+                             routeData: RouteData,
+                             apiKey: String
+) = withContext(Dispatchers.IO) {
     val routeMatrix: MutableList<MutableList<MutableList<Int>>> = mutableListOf()
     val currentLocationExists: Int = if (currentLocation != null) 1 else 0
 
     // Get route times for every half hour in the next 2-hour interval
     for (timeAdded in 0..3) {
-        println(getJSONPayload(currentLocation, addresses, timeAdded))
+        try {
+            val payload = getRouteMatrixJSONPayload(currentLocation, addresses, timeAdded)
+            val responseJSON = callMapsRouteMatrixAPI(payload, apiKey).getOrNull()
 
-        var responseJSON: List<ResponseData>
-        callMapsAPI(
-            getJSONPayload(currentLocation, addresses, timeAdded),
-            apiKey,
-            onSuccess = {
-                responseJSON = it
-                routeMatrix.add(readJSONResponse(responseJSON, addresses.size + currentLocationExists))
-            },
-            onFailure = { error ->
-                error.printStackTrace()
-            }
-        )
+            if(responseJSON != null)
+                routeMatrix.add(readRouteMatrixJSONResponse(responseJSON, addresses.size + currentLocationExists))
+            else
+                println("Error: responseJSON is null")
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+        }
     }
 
-    GlobalScope.launch(Dispatchers.Main) {
-        delay(3000)
+    launch(Dispatchers.Default) {
         val currentRoute: MutableList<Int> = mutableListOf(0)
-        val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
+        getRoute(currentRoute, routeMatrix, addresses.size + currentLocationExists, 0, 0, routeData)
+    }
+}
 
-        getRoute(currentRoute, routeMatrix, addresses.size + currentLocationExists, 0, 0, routeData, returnToOrigin)
-        println(routeData.minRoute)
-        val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
+suspend fun getRouteWithReturn(currentLocation: Location?,
+                               addresses: MutableList<String>,
+                               routeData: RouteData,
+                               apiKey: String
+) = withContext(Dispatchers.IO) {
+    try {
+        val payload = getRouteOptimizationJSONPayload(currentLocation, addresses)
 
-        println(webLink)
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
-        startActivity(context, intent, null)
+        println("API Request Payload: $payload")
+
+        val responseJSON = callMapsRouteOptimizerAPI(payload, apiKey).getOrNull()
+
+        println("Response JSON after calling api: $responseJSON")
+
+        if(responseJSON != null) {
+            routeData.minRoute = readRouteOptimizationJSONResponse(responseJSON)
+        } else {
+            val errorMessage = "Error: responseJSON is null"
+            println(errorMessage)
+            throw Exception(errorMessage)
+        }
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
     }
 }
