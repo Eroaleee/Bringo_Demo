@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@drawable/rounded_edittext_background2">
+    android:background="@drawable/rounded_edittext_background3">
 
     <TextView
         android:id="@+id/tvPopupDeniedLocationPermission"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="394dp"
+        android:layout_height="174dp"
         android:paddingHorizontal="30dp"
         android:text="@string/permisiune_locatie_respinsa"
-        android:textSize="20sp"
+        android:textSize="28sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.325" />
 
     <Button
         android:id="@+id/btnPopupAskPermissionAgain"
-        android:layout_width="170dp"
-        android:layout_height="54dp"
+        android:layout_width="180dp"
+        android:layout_height="59dp"
         android:background="@drawable/rounded_edittext_background2"
         android:text="@string/schimba_permisiunea"
+        android:textSize="22sp"
         android:textColor="@color/black"
         app:layout_constraintEnd_toStartOf="@+id/btnPopupOK"
         app:layout_constraintStart_toStartOf="parent"
@@ -33,10 +35,11 @@
 
     <Button
         android:id="@+id/btnPopupOK"
-        android:layout_width="176dp"
-        android:layout_height="53dp"
+        android:layout_width="187dp"
+        android:layout_height="60dp"
         android:background="@drawable/rounded_edittext_background2"
         android:text="@string/ok_am_inteles"
+        android:textSize="22sp"
         android:textColor="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/btnPopupAskPermissionAgain"
