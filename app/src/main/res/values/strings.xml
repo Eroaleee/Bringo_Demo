@@ -9,4 +9,7 @@
     <string name="permisiune_locatie_respinsa">Permite accesarea locației curente pentru a nu trebui să pui manual adresa curentă la început.</string>
     <string name="schimba_permisiunea">Permite</string>
     <string name="ok_am_inteles">Refuză</string>
+    <string name="example_address">Example Address</string>
+    <string name="deletebutton">DeleteButton</string>
+    <string name="editbutton">EditButton</string>
 </resources>

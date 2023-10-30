@@ -9,8 +9,8 @@
 
     <TextView
         android:id="@+id/tvPopupDeniedLocationPermission"
-        android:layout_width="394dp"
-        android:layout_height="174dp"
+        android:layout_width="524dp"
+        android:layout_height="181dp"
         android:paddingHorizontal="30dp"
         android:text="@string/permisiune_locatie_respinsa"
         android:textSize="28sp"
@@ -19,7 +19,7 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.325" />
+        app:layout_constraintVertical_bias="0.572" />
 
     <Button
         android:id="@+id/btnPopupAskPermissionAgain"

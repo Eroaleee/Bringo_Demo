@@ -19,7 +19,7 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline18"
         app:layout_constraintStart_toStartOf="@+id/guideline15"
         app:layout_constraintTop_toTopOf="@+id/guideline16"
- />
+        />
 
     <ImageButton
         android:id="@+id/btnErase"
