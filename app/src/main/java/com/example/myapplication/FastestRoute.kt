@@ -63,19 +63,22 @@ class RouteService(private val context: Context) {
             try {
                 val routeData = RouteData(1, Int.MAX_VALUE, mutableListOf())
 
-                if (!returnToOrigin)
-                    getRouteNoReturn(currentLocation, addresses, routeData, apiKey)
-                else
-                    getRouteWithReturn(currentLocation, addresses, routeData, apiKey)
+                if (addresses.size == 1 || (addresses.size == 2 && currentLocation == null)) {
+                    routeData.minRoute = mutableListOf(0, 1)
+                    if(returnToOrigin)
+                        routeData.minRoute.add(0)
+                }
+                else {
+                    if (!returnToOrigin)
+                        getRouteNoReturn(currentLocation, addresses, routeData, apiKey)
+                    else
+                        getRouteWithReturn(currentLocation, addresses, routeData, apiKey)
+                }
 
 
                 println("Minimum route is: ${routeData.minRoute}")
                 val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
 
-                // The below commented code will be moved to main activity
-                /*println(webLink)
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
-                startActivity(context, intent, null)*/
                 Result.success(webLink)
             } catch (e: Exception) {
                 Result.failure(e)

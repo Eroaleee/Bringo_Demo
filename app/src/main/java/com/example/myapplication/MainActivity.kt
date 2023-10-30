@@ -34,6 +34,7 @@ import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
@@ -105,7 +106,26 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
         findViewById<Button>(R.id.btnStartRoute).setOnClickListener{
             val addresses: MutableList<String> = addressAdapter.getAddresses()
 
-            getFastestRoute(currentLocation, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
+            if(addresses.isEmpty())
+                showErrorPopup("No addresses inputted")
+            else if (addresses.size == 1 && currentLocation == null){
+                showErrorPopup("No destination/intermediate addresses inputted")
+            } else {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (NetworkUtils.isNetworkConnected(this@MainActivity)) {
+                        if (NetworkUtils.hasInternetAccess()) {
+                            // Connected to the internet and have internet access
+                            getFastestRoute(currentLocation, addresses, findViewById<CheckBox>(R.id.cbReturnToOrigin).isChecked)
+                        } else {
+                            // Connected to the network, but no internet access
+                            showErrorPopup("No Internet Access")
+                        }
+                    } else {
+                        // Not connected to any network
+                        showErrorPopup("No Internet Connection")
+                    }
+                }
+            }
         }
     }
 
