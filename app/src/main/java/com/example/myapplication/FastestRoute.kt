@@ -75,6 +75,8 @@ class RouteService(private val context: Context) {
                         getRouteWithReturn(currentLocation, addresses, routeData, apiKey)
                 }
 
+                if(routeData.minRoute.isEmpty())
+                    return@withContext Result.failure(Exception("Invalid address"))
 
                 println("Minimum route is: ${routeData.minRoute}")
                 val webLink = generateWebLink(routeData.minRoute, currentLocation, addresses)
@@ -176,6 +178,7 @@ suspend fun getRouteNoReturn(currentLocation: Location?,
                 println("Error: responseJSON is null")
         } catch (e: Exception) {
             println("Error: ${e.message}")
+            return@withContext "Invalid address"
         }
     }
 

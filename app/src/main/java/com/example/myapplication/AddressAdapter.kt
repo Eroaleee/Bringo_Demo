@@ -5,19 +5,34 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 class AddressAdapter (
-    private val addresses: MutableList<Address>,
     private val listener: AddressClickListener
-) : RecyclerView.Adapter<AddressAdapter.AddressViewHolder>() {
+) : ListAdapter<Address, AddressAdapter.AddressViewHolder>(DiffCallback()) {
 
     // Interface for connecting the RecyclerView to the Screen
     interface AddressClickListener {
         fun onEditClicked(address: String)
     }
 
-    class AddressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+    class AddressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvAddress: TextView = itemView.findViewById(R.id.tvAddress)
+        val btnEdit: ImageButton = itemView.findViewById(R.id.btnEdit)
+        val btnErase: ImageButton = itemView.findViewById(R.id.btnErase)
+    }
+
+    class DiffCallback : DiffUtil.ItemCallback<Address>() {
+        override fun areItemsTheSame(oldItem: Address, newItem: Address): Boolean {
+            return oldItem === newItem
+        }
+
+        override fun areContentsTheSame(oldItem: Address, newItem: Address): Boolean {
+            return oldItem.address == newItem.address
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AddressViewHolder {
         return AddressViewHolder(
@@ -29,40 +44,28 @@ class AddressAdapter (
         )
     }
 
-    fun addAddress(address: Address) {
-        addresses.add(address)
-        notifyItemInserted(addresses.size - 1)
-    }
-
-    private fun deleteAddress(position: Int) {
-        addresses.removeAt(position)
-        notifyItemRemoved(position)
-    }
-
     override fun onBindViewHolder(holder: AddressViewHolder, position: Int) {
-        val currAddress = addresses[position]
-        holder.itemView.apply {
-            findViewById<TextView>(R.id.tvAddress).text = currAddress.address
-
-            findViewById<ImageButton>(R.id.btnEdit).setOnClickListener {
+        val currAddress = getItem(position)
+        holder.apply {
+            tvAddress.text = currAddress.address
+            btnEdit.setOnClickListener {
                 listener.onEditClicked(currAddress.address)
-                deleteAddress(position)
+                // You might want to handle the edit action differently
             }
-
-            findViewById<ImageButton>(R.id.btnErase).setOnClickListener {
-                deleteAddress(position)
+            btnErase.setOnClickListener {
+                // Use this function to remove an item from the list
+                val newList = currentList.toMutableList().apply {
+                    remove(currAddress)
+                }
+                submitList(newList)
             }
         }
-    }
-
-    override fun getItemCount(): Int {
-        return addresses.size
     }
 
     fun getAddresses(): MutableList<String> {
         val addressList = mutableListOf<String>()
 
-        addresses.forEach {
+        currentList.forEach {
             addressList.add(it.address)
         }
 

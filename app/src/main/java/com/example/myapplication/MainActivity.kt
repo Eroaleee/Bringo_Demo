@@ -19,7 +19,6 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -46,7 +45,6 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     private var currentLocation: Location? = null
     private var comingFromSettings = false
     private val token = AutocompleteSessionToken.newInstance()
-    //private val validPrefixes = mutableListOf("")
     private val routeService by lazy { RouteService(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,7 +53,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
 
         val actvAddressInput = findViewById<AutoCompleteTextView>(R.id.actvAddressName)
 
-        addressAdapter = AddressAdapter(mutableListOf(), this)
+        addressAdapter = AddressAdapter(this)
         autoCompleteAdapter = ArrayAdapter(this, R.layout.autocomplete_item)
         autoCompleteTextView = actvAddressInput
         autoCompleteTextView.setAdapter(autoCompleteAdapter)
@@ -76,7 +74,10 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
 
             if(addressName.isNotEmpty()) {
                 val address = Address(addressName)
-                addressAdapter.addAddress(address)
+                val newList = addressAdapter.currentList.toMutableList().apply {
+                    add(address)
+                }
+                addressAdapter.submitList(newList)
                 actvAddressInput.text.clear()
             }
         }
@@ -90,11 +91,9 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
                         query = ""
 
                     // Update the Autocomplete Predictions based on the new query
-                    //applyDiacriticsAndUpdateList(query)
                     updateAutocompletePredictions(query)
 
                     autoCompleteAdapter.notifyDataSetChanged()
-                    //println(validPrefixes)
                 }
 
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -104,7 +103,7 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
 
         // Adds functionality to the start route button
         findViewById<Button>(R.id.btnStartRoute).setOnClickListener{
-            val addresses: MutableList<String> = addressAdapter.getAddresses()
+            val addresses: MutableList<String> = addressAdapter.getAddresses().distinct().toMutableList()
 
             if(addresses.isEmpty())
                 showErrorPopup("No addresses inputted")
@@ -138,7 +137,6 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
                 val webLink = result.getOrNull()
                 if (webLink != null) {
                     // Redirect to Google Maps
-                    // TODO: add support for waze
                     println(webLink)
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webLink))
                     startActivity(intent)
@@ -154,7 +152,6 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
         }
     }
 
-    // TODO: add error popups for invalid addresses and internet connection
     private fun showErrorPopup(message: String) {
         // Show an error popup with the provided message
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -242,10 +239,17 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
     }
 
     override fun onEditClicked(address: String) {
-        val editText: EditText = findViewById(R.id.actvAddressName)
+        val actvAddressInput = findViewById<AutoCompleteTextView>(R.id.actvAddressName)
 
-        editText.setText(address)
-        editText.setSelection(editText.text.length)
+        actvAddressInput.setText(address)
+        actvAddressInput.setSelection(actvAddressInput.text.length)
+
+        val addressToRemove = Address(address)
+        val newList = addressAdapter.currentList.toMutableList().apply {
+            remove(addressToRemove)
+        }
+        addressAdapter.submitList(newList)
+
     }
 
     private fun initializePlacesAPI() {
@@ -258,56 +262,6 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
 
         placesClient = Places.createClient(this)
     }
-
-    /*private fun applyDiacriticsAndUpdateList(input: String) {
-        autoCompleteAdapter.clear()
-
-        // If a letter was added
-        if (input.length > validPrefixes.last().length) {
-            val prefixes = validPrefixes.filter { it.length == input.length - 1 }
-
-            for (prefix in prefixes) {
-                val diacriticMap = mapOf(
-                    'a' to listOf('ă', 'â'),
-                    'ă' to listOf('a', 'â'),
-                    'â' to listOf('ă', 'a'),
-
-                    'i' to listOf('î'),
-                    'î' to listOf('i'),
-
-                    's' to listOf('ș'),
-                    'ș' to listOf('s'),
-
-                    't' to listOf('ț'),
-                    'ț' to listOf('t')
-                )
-
-                val newString = prefix + input.last()
-                updateAutocompletePredictions(newString)
-
-                val lastChar = newString.last()
-                diacriticMap[lastChar.lowercaseChar()]?.let { diacriticChars ->
-                    for (diacriticChar in diacriticChars) {
-                        val variation = StringBuilder(newString).also {
-                            it.setCharAt(input.length - 1, if (lastChar.isUpperCase()) diacriticChar.uppercaseChar() else diacriticChar)
-                        }.toString()
-                        updateAutocompletePredictions(variation)
-                    }
-                }
-            }
-        }
-
-        // If a letter was deleted
-        else if (input.length < validPrefixes.last().length) {
-            validPrefixes.removeIf { it.length > input.length }
-        }
-
-        // If the word was deleted
-        else if (input.isEmpty()) {
-            validPrefixes.clear()
-            validPrefixes.add("")
-        }
-    }*/
 
     private fun updateAutocompletePredictions(query: String) {
         // Define the bounds for your autocomplete predictions
@@ -332,25 +286,13 @@ class MainActivity : AppCompatActivity(), AddressAdapter.AddressClickListener {
             .addOnSuccessListener { response ->
                 // Handle the success scenario here, you can update the UI with the predictions
                 val predictions = response.autocompletePredictions.map { it.getFullText(null).toString() }
-                /*
-                // Get the current items in the autoCompleteAdapter
-                val currentItems = (0 until autoCompleteAdapter.count).map { autoCompleteAdapter.getItem(it) }
 
-                // Filter out the predictions that are already in the adapter
-                val newPredictions = predictions.filter { it !in currentItems }
-                autoCompleteAdapter.addAll(newPredictions)*/
                 autoCompleteAdapter.clear()
                 autoCompleteAdapter.addAll(predictions)
 
-                //var ok = false;
-                for (prediction in predictions) {
-                    /*if(!ok && prediction.startsWith(query)) {
-                        validPrefixes.add(query)
-                        ok = true
-                    }*/
-
+                for (prediction in predictions)
                     Log.d("AUTOCOMPLETE", prediction)
-                }
+
             }.addOnFailureListener { exception ->
                 if (exception is ApiException) {
                     Log.d("AUTOCOMPLETE", "Place not found: ${exception.statusCode}")
